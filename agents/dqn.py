@@ -3,15 +3,15 @@ import torch
 import torch.nn as nn
 
 class DQNNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, obs_dim, action_dim, hidden_dim=128):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(72, 128),
+            nn.Linear(obs_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(128, 7)
+            nn.Linear(hidden_dim, action_dim)
         )
 
-def forward(self, x):
-    return self.net(x)
+    def forward(self, x):
+        return self.net(x)

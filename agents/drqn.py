@@ -2,24 +2,24 @@ import torch
 import torch.nn as nn
 
 class DRQNNetwork(nn.Module):
-    def __init__(self):
+    def __init__(self, obs_dim, action_dim, hidden_dim=128):
         super().__init__()
+        self.hidden_dim = hidden_dim
         self.encoder = nn.Sequential(
-            nn.Linear(72, 128),
+            nn.Linear(obs_dim, hidden_dim),
             nn.ReLU()
         )
-        self.lstm = nn.LSTM(128, 128, batch_first=True)
-        self.decoder = nn.Linear(128, 7)
+        self.lstm = nn.LSTM(hidden_dim, hidden_dim, batch_first=True)
+        self.decoder = nn.Linear(hidden_dim, action_dim)
 
     def forward(self, x, hidden=None):
         encoded = self.encoder(x)
         lstm_out, hidden = self.lstm(encoded, hidden)
         q_values = self.decoder(lstm_out)
         return q_values, hidden
-    
+
     def init_hidden(self, batch_size=1, device="cpu"):
-        # h_0 and c_0 both start as zeros
         return (
-            torch.zeros(1, batch_size, 128).to(device),
-            torch.zeros(1, batch_size, 128).to(device)
+            torch.zeros(1, batch_size, self.hidden_dim).to(device),
+            torch.zeros(1, batch_size, self.hidden_dim).to(device)
         )
