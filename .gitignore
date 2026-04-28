@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+
+# MLflow — experiment logs (large, machine-specific)
+mlruns/
+
+# Optuna — SQLite study databases (large, machine-specific)
+optuna_studies/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db

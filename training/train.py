@@ -75,6 +75,9 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
         reward_log.append(episode_reward)
         episode += 1
 
+        eval_episodes = TRAIN_CONFIG["eval_episodes"]
+        return float(np.mean(reward_log[-eval_episodes:]))
+
 def _dqn_train_step(policy_net, target_net, optimizer,
                     buffer, batch_size, gamma, device):
     """Single gradient update for DQN."""
@@ -98,6 +101,73 @@ def _dqn_train_step(policy_net, target_net, optimizer,
     loss.backward()
     optimizer.step()
     return loss.item()
+
+def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, seq_len):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # setup
+    env = hexxed()
+    env.ready(**ENV_CONFIG)
+
+    policy_net = DRQNNetwork(obs_dim=72, action_dim=7, hidden_dim=hidden_dim).to(device)
+    target_net = DRQNNetwork(obs_dim=72, action_dim=7, hidden_dim=hidden_dim).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+    target_net.eval()
+
+    optimizer = torch.optim.Adam(policy_net.parameters(), lr=lr)
+    buffer    = SequenceReplayBuffer(capacity=buffer_size, seq_len=seq_len)
+
+    epsilon       = TRAIN_CONFIG["epsilon_start"]
+    epsilon_end   = TRAIN_CONFIG["epsilon_end"]
+    epsilon_decay = TRAIN_CONFIG["epsilon_decay"]
+    total_steps   = TRAIN_CONFIG["total_timesteps"]
+
+    step       = 0
+    reward_log = []
+
+    # training loop
+    while step < total_steps:
+        state  = env.reset()
+        done   = False
+        episode_reward = 0
+
+        # hidden resets every episode, persists across steps within it
+        hidden = policy_net.init_hidden(batch_size=1, device=device)
+
+        while not done:
+            state_t = torch.FloatTensor(state).unsqueeze(0).unsqueeze(0).to(device)
+
+            if random.random() < epsilon:
+                action = env.action_space.sample()
+                # step hidden forward even on random actions
+                with torch.no_grad():
+                    _, hidden = policy_net(state_t, hidden)
+            else:
+                with torch.no_grad():
+                    q_values, hidden = policy_net(state_t, hidden)
+                    action = q_values[0, 0, :].argmax().item()
+
+            next_state, reward, done, _ = env.step(action)
+            buffer.push(state, action, reward, next_state, done)
+            state = next_state
+            episode_reward += reward
+            step += 1
+
+            if buffer.is_ready(batch_size):
+                loss = _drqn_train_step(
+                    policy_net, target_net, optimizer,
+                    buffer, batch_size, gamma, device
+                )
+
+            if step % target_update == 0:
+                target_net.load_state_dict(policy_net.state_dict())
+
+            epsilon = max(epsilon_end, epsilon * epsilon_decay)
+
+        reward_log.append(episode_reward)
+
+    eval_episodes = TRAIN_CONFIG["eval_episodes"]
+    return float(np.mean(reward_log[-eval_episodes:]))
 
 
 def _drqn_train_step(policy_net, target_net, optimizer,
