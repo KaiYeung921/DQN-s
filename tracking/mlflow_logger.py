@@ -60,6 +60,11 @@ def log_training_phase_rewards(early, mid, late):
     mlflow.log_metric("reward_late",  late)
 
 
+def log_trial_result(final_reward):
+    """Logs the scalar objective value Optuna optimizes — the final eval reward."""
+    mlflow.log_metric("final_reward", final_reward)
+
+
 def log_summary(tracker):
     """
     Call once at the end of a training run.
