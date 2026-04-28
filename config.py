@@ -11,11 +11,13 @@ ENV_CONFIG = {
 }
 
 TRAIN_CONFIG = {
-    "total_timesteps": 50_000,
+    "total_timesteps": 10000,
     "eval_episodes":   20,
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
-    "epsilon_decay":   0.995,
+    "epsilon_decay":   0.99,
+    "log_every":       100,
+    "rolling_window":  10,
 }
 
 # Optuna search spaces — (type, low, high, log_scale)

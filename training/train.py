@@ -10,6 +10,58 @@ from agents.drqn import DRQNNetwork
 from agents.buffer import ReplayBuffer, SequenceReplayBuffer
 from config import ENV_CONFIG, TRAIN_CONFIG
 
+class ProgressTracker:
+    """
+    Tracks learning speed metrics during a training run.
+    Records step-level data so we can plot learning curves
+    and measure how fast the agent reaches competency.
+    """
+    def __init__(self, rolling_window=10):
+        self.rolling_window   = rolling_window
+
+        # per-step logs
+        self.steps            = []        # global step number
+        self.episode_rewards  = []        # reward each episode
+        self.episode_steps    = []        # which step each episode ended on
+        self.level_at_step    = []        # what level agent is on each episode
+        self.rolling_reward   = []        # smoothed reward
+
+        # milestone logs
+        self.first_level_clear   = None   # step when level 1 first cleared
+        self.level_clear_steps   = {}     # step when each level first cleared
+        self.episodes_to_level   = {}     # episode number when each level first cleared
+
+        self._episode_count   = 0
+
+    def log_episode(self, step, reward, level, env):
+        self._episode_count += 1
+        self.episode_rewards.append(reward)
+        self.episode_steps.append(step)
+        self.level_at_step.append(level)
+
+        # rolling average
+        window = self.episode_rewards[-self.rolling_window:]
+        self.rolling_reward.append(np.mean(window))
+
+        # check if a new level was cleared
+        if level not in self.level_clear_steps:
+            if env.wave_reward >= env.max_reward - len(env.pattern_list) * 6:
+                self.level_clear_steps[level]   = step
+                self.episodes_to_level[level]   = self._episode_count
+                if level == 1 and self.first_level_clear is None:
+                    self.first_level_clear = step
+                print(f"  ★ Level {level} cleared at step {step} "
+                      f"(episode {self._episode_count})")
+
+    def summary(self):
+        return {
+            "first_level_clear_step":    self.first_level_clear,
+            "level_clear_steps":         self.level_clear_steps,
+            "episodes_to_level":         self.episodes_to_level,
+            "final_rolling_reward":      self.rolling_reward[-1] if self.rolling_reward else 0,
+            "mean_reward":               np.mean(self.episode_rewards) if self.episode_rewards else 0,
+        }
+
 def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -25,6 +77,8 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
 
     optimizer = torch.optim.Adam(policy_net.parameters(), lr=lr)
     buffer    = ReplayBuffer(capacity=buffer_size)
+
+    tracker = ProgressTracker(rolling_window=TRAIN_CONFIG["rolling_window"])
 
     epsilon      = TRAIN_CONFIG["epsilon_start"]
     epsilon_end  = TRAIN_CONFIG["epsilon_end"]
@@ -74,9 +128,11 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
 
         reward_log.append(episode_reward)
         episode += 1
+        tracker.log_episode(step, episode_reward, env.curr_wave, env)
 
-        eval_episodes = TRAIN_CONFIG["eval_episodes"]
-        return float(np.mean(reward_log[-eval_episodes:]))
+    eval_episodes = TRAIN_CONFIG["eval_episodes"]
+    final_reward = float(np.mean(tracker.episode_rewards[-eval_episodes:]))
+    return final_reward, tracker
 
 def _dqn_train_step(policy_net, target_net, optimizer,
                     buffer, batch_size, gamma, device):
@@ -116,6 +172,9 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
 
     optimizer = torch.optim.Adam(policy_net.parameters(), lr=lr)
     buffer    = SequenceReplayBuffer(capacity=buffer_size, seq_len=seq_len)
+
+    tracker = ProgressTracker(rolling_window=TRAIN_CONFIG["rolling_window"])
+
 
     epsilon       = TRAIN_CONFIG["epsilon_start"]
     epsilon_end   = TRAIN_CONFIG["epsilon_end"]
@@ -165,9 +224,12 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
 
         reward_log.append(episode_reward)
+        tracker.log_episode(step, episode_reward, env.curr_wave, env)
+
 
     eval_episodes = TRAIN_CONFIG["eval_episodes"]
-    return float(np.mean(reward_log[-eval_episodes:]))
+    final_reward  = float(np.mean(tracker.episode_rewards[-eval_episodes:]))
+    return final_reward, tracker
 
 
 def _drqn_train_step(policy_net, target_net, optimizer,

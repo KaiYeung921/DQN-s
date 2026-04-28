@@ -13,7 +13,8 @@ from tracking.mlflow_logger import (
     setup_mlflow,
     start_run,
     end_run,
-    log_trial_result
+    log_trial_result,
+    log_summary
 )
 from training.train import train_dqn, train_drqn
 
@@ -53,8 +54,9 @@ def make_dqn_objective():
 
         try:
             # run full training, get back the objective score
-            final_reward = train_dqn(**params)
+            final_reward, tracker = train_dqn(**params)
             log_trial_result(final_reward)
+            log_summary(tracker)
             return final_reward
 
         except Exception as e:
@@ -83,8 +85,9 @@ def make_drqn_objective():
         start_run(params)
 
         try:
-            final_reward = train_drqn(**params)
+            final_reward, tracker = train_drqn(**params)
             log_trial_result(final_reward)
+            log_summary(tracker)
             return final_reward
 
         except Exception as e:
