@@ -9,6 +9,7 @@ from agents.dqn import DQNNetwork
 from agents.drqn import DRQNNetwork
 from agents.buffer import ReplayBuffer, SequenceReplayBuffer
 from config import ENV_CONFIG, TRAIN_CONFIG
+from tracking.mlflow_logger import log_episode as mlflow_log_episode
 
 class ProgressTracker:
     """
@@ -35,6 +36,7 @@ class ProgressTracker:
 
     def log_episode(self, step, reward, level, env):
         self._episode_count += 1
+        self.steps.append(step)
         self.episode_rewards.append(reward)
         self.episode_steps.append(step)
         self.level_at_step.append(level)
@@ -70,8 +72,12 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
     env = hexxed()
     env.ready(**ENV_CONFIG)
 
-    policy_net = DQNNetwork(obs_dim=72, action_dim=7, hidden_dim=hidden_dim).to(device)
-    target_net = DQNNetwork(obs_dim=72, action_dim=7, hidden_dim=hidden_dim).to(device)
+    nv = ENV_CONFIG["num_vertices"]
+    obs_dim = nv * 2 * nv
+    action_dim = nv + 1
+
+    policy_net = DQNNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_dim=hidden_dim).to(device)
+    target_net = DQNNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_dim=hidden_dim).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     target_net.eval()
 
@@ -87,13 +93,13 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
 
     step        = 0
     episode     = 0
-    reward_log  = []   # tracks per-episode reward for Optuna objective
 
     #traing loop
 
     while step < total_steps:
         state = env.reset()
         episode_reward = 0
+        last_loss = None
         done = False
 
         while not done:
@@ -114,7 +120,7 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
 
             # train only when buffer has enough transitions
             if buffer.is_ready(batch_size):
-                loss = _dqn_train_step(
+                last_loss = _dqn_train_step(
                     policy_net, target_net, optimizer,
                     buffer, batch_size, gamma, device
                 )
@@ -126,9 +132,9 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
             # decay epsilon
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
 
-        reward_log.append(episode_reward)
         episode += 1
         tracker.log_episode(step, episode_reward, env.curr_wave, env)
+        mlflow_log_episode(episode, episode_reward, epsilon, env.curr_wave, last_loss)
 
     eval_episodes = TRAIN_CONFIG["eval_episodes"]
     final_reward = float(np.mean(tracker.episode_rewards[-eval_episodes:]))
@@ -165,8 +171,12 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
     env = hexxed()
     env.ready(**ENV_CONFIG)
 
-    policy_net = DRQNNetwork(obs_dim=72, action_dim=7, hidden_dim=hidden_dim).to(device)
-    target_net = DRQNNetwork(obs_dim=72, action_dim=7, hidden_dim=hidden_dim).to(device)
+    nv = ENV_CONFIG["num_vertices"]
+    obs_dim = nv * 2 * nv
+    action_dim = nv + 1
+
+    policy_net = DRQNNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_dim=hidden_dim).to(device)
+    target_net = DRQNNetwork(obs_dim=obs_dim, action_dim=action_dim, hidden_dim=hidden_dim).to(device)
     target_net.load_state_dict(policy_net.state_dict())
     target_net.eval()
 
@@ -181,14 +191,15 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
     epsilon_decay = TRAIN_CONFIG["epsilon_decay"]
     total_steps   = TRAIN_CONFIG["total_timesteps"]
 
-    step       = 0
-    reward_log = []
+    step    = 0
+    episode = 0
 
     # training loop
     while step < total_steps:
         state  = env.reset()
         done   = False
         episode_reward = 0
+        last_loss = None
 
         # hidden resets every episode, persists across steps within it
         hidden = policy_net.init_hidden(batch_size=1, device=device)
@@ -213,7 +224,7 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
             step += 1
 
             if buffer.is_ready(batch_size):
-                loss = _drqn_train_step(
+                last_loss = _drqn_train_step(
                     policy_net, target_net, optimizer,
                     buffer, batch_size, gamma, device
                 )
@@ -223,8 +234,9 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
 
             epsilon = max(epsilon_end, epsilon * epsilon_decay)
 
-        reward_log.append(episode_reward)
+        episode += 1
         tracker.log_episode(step, episode_reward, env.curr_wave, env)
+        mlflow_log_episode(episode, episode_reward, epsilon, env.curr_wave, last_loss)
 
 
     eval_episodes = TRAIN_CONFIG["eval_episodes"]

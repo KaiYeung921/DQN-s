@@ -1,3 +1,4 @@
+import os
 import random
 from gym import core, spaces
 import numpy as np
@@ -66,7 +67,8 @@ class hexxed(core.Env):
         #self.reset()
 
     def read_patterns(self, num_targets):
-        all_patterns = np.loadtxt('spawn.txt','int',delimiter=',')
+        _here = os.path.dirname(os.path.abspath(__file__))
+        all_patterns = np.loadtxt(os.path.join(_here, '..', 'spawn.txt'), 'int', delimiter=',')
         patterns = []
         for i in num_targets:
             level_patterns = all_patterns[all_patterns[...,1] == i+1,...]

@@ -89,8 +89,8 @@ class SequenceReplayBuffer:
         return len(self.buffer)
 
     def is_ready(self, batch_size):
-        return len(self) >= batch_size
-    
+        return self._total_transitions >= batch_size
+
 
 
 if __name__ == "__main__":
