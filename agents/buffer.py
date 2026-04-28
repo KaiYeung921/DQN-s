@@ -40,6 +40,7 @@ class SequenceReplayBuffer:
         self.buffer = deque(maxlen=capacity)
         self.seq_len = seq_len
         self.current_episode = []
+        self._total_transitions = 0  # transitions across all stored episodes
 
     def push(self, state, action, reward, next_state, done):
         self.current_episode.append((
@@ -51,6 +52,9 @@ class SequenceReplayBuffer:
         ))
         if done:
             if len(self.current_episode) >= self.seq_len:
+                if len(self.buffer) == self.buffer.maxlen:
+                    self._total_transitions -= len(self.buffer[0])
+                self._total_transitions += len(self.current_episode)
                 self.buffer.append(self.current_episode)
             self.current_episode = []   # reset for next episode
 
