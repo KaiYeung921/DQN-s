@@ -38,7 +38,7 @@ DRQN_SEARCH_SPACE = {
     "batch_size":   ("int",   32, 256, False),
     "target_update":("int",   10, 500, False),
     "hidden_dim":   ("int",   64, 512, False),
-    "seq_len":      ("int",   4, 32, False),    # DRQN only
+    "seq_len":      ("int",   4, 12, False),    # DRQN only — capped to match episode lengths at early levels
 }
 
 # MLflow

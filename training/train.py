@@ -55,6 +55,12 @@ class ProgressTracker:
                 print(f"  ★ Level {level} cleared at step {step} "
                       f"(episode {self._episode_count})")
 
+    def learning_speed_score(self, total_steps):
+        """Higher = faster. Sum of remaining budget when each level was first cleared."""
+        if not self.level_clear_steps:
+            return 0.0
+        return float(sum(total_steps - step for step in self.level_clear_steps.values()))
+
     def summary(self):
         return {
             "first_level_clear_step":    self.first_level_clear,
@@ -136,9 +142,11 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
         tracker.log_episode(step, episode_reward, env.curr_wave, env)
         mlflow_log_episode(episode, episode_reward, epsilon, env.curr_wave, last_loss)
 
-    eval_episodes = TRAIN_CONFIG["eval_episodes"]
-    final_reward = float(np.mean(tracker.episode_rewards[-eval_episodes:]))
-    return final_reward, tracker
+        # stop early once all levels cleared — prevents level-reset from corrupting metrics
+        if ENV_CONFIG["levels"] in tracker.level_clear_steps:
+            break
+
+    return tracker.learning_speed_score(total_steps), tracker
 
 def _dqn_train_step(policy_net, target_net, optimizer,
                     buffer, batch_size, gamma, device):
@@ -238,10 +246,11 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
         tracker.log_episode(step, episode_reward, env.curr_wave, env)
         mlflow_log_episode(episode, episode_reward, epsilon, env.curr_wave, last_loss)
 
+        # stop early once all levels cleared — prevents level-reset from corrupting metrics
+        if ENV_CONFIG["levels"] in tracker.level_clear_steps:
+            break
 
-    eval_episodes = TRAIN_CONFIG["eval_episodes"]
-    final_reward  = float(np.mean(tracker.episode_rewards[-eval_episodes:]))
-    return final_reward, tracker
+    return tracker.learning_speed_score(total_steps), tracker
 
 
 def _drqn_train_step(policy_net, target_net, optimizer,
