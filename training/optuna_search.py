@@ -118,9 +118,11 @@ def run_study(agent_type, study_name=None, n_jobs=None):
     # locking errors when multiple processes hit it simultaneously.
     journal_path = f"{OPTUNA_DIR}/{study_name}.log"
     # JournalFileBackend (Optuna <4) was renamed to JournalFileStorage (Optuna 4+)
-    _backend_cls = getattr(optuna.storages, "JournalFileStorage",
-                           optuna.storages.JournalFileBackend)
-    storage = optuna.storages.JournalStorage(_backend_cls(journal_path))
+    try:
+        _backend = optuna.storages.JournalFileStorage(journal_path)
+    except AttributeError:
+        _backend = optuna.storages.JournalFileBackend(journal_path)
+    storage = optuna.storages.JournalStorage(_backend)
 
     # pre-create the MLflow experiment in this process before workers start
     # so parallel workers never race to create it simultaneously
