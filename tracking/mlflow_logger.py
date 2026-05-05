@@ -8,14 +8,17 @@ from config import (
 )
 
 
-def setup_mlflow(agent_type):
+def setup_mlflow(agent_type, experiment_name=None):
     """
     Call once before any training run.
-    Tells MLflow where to save data and which experiment to log under.
+    experiment_name overrides the default from config — use this to log
+    a new experiment without mixing runs with existing ones.
     """
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-    if agent_type == "dqn":
+    if experiment_name:
+        mlflow.set_experiment(experiment_name)
+    elif agent_type == "dqn":
         mlflow.set_experiment(DQN_EXPERIMENT_NAME)
     else:
         mlflow.set_experiment(DRQN_EXPERIMENT_NAME)

@@ -10,7 +10,6 @@ from config import (
     DRQN_SEARCH_SPACE,
     N_TRIALS,
     N_JOBS,
-    TRAIN_CONFIG,
     MLFLOW_TRACKING_URI,
 )
 from tracking.mlflow_logger import (
@@ -52,7 +51,7 @@ def make_dqn_objective(experiment_name):
         start_run(params)
 
         try:
-            score, tracker = train_dqn(**params, total_steps_override=TRAIN_CONFIG["search_timesteps"])
+            score, tracker = train_dqn(**params)
             log_trial_result(score)
             log_summary(tracker)
             return score
@@ -77,7 +76,7 @@ def make_drqn_objective(experiment_name):
         start_run(params)
 
         try:
-            score, tracker = train_drqn(**params, total_steps_override=TRAIN_CONFIG["search_timesteps"])
+            score, tracker = train_drqn(**params)
             log_trial_result(score)
             log_summary(tracker)
             return score

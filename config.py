@@ -12,7 +12,6 @@ ENV_CONFIG = {
 
 TRAIN_CONFIG = {
     "total_timesteps":  75_000,
-    "search_timesteps": 30_000,
     "eval_episodes":   20,
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
