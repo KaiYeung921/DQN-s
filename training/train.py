@@ -94,12 +94,12 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim,
     epsilon      = TRAIN_CONFIG["epsilon_start"]
     epsilon_end  = TRAIN_CONFIG["epsilon_end"]
     epsilon_decay= TRAIN_CONFIG["epsilon_decay"]
+    train_freq   = TRAIN_CONFIG["train_freq"]
+    log_every    = TRAIN_CONFIG["log_every"]
     total_steps  = total_steps_override if total_steps_override is not None else TRAIN_CONFIG["total_timesteps"]
 
     step        = 0
     episode     = 0
-
-    #traing loop
 
     while step < total_steps:
         state = env.reset()
@@ -123,8 +123,8 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim,
             episode_reward += reward
             step += 1
 
-            # train only when buffer has enough transitions
-            if buffer.is_ready(batch_size):
+            # train every train_freq steps — matches DQN paper (4 steps)
+            if step % train_freq == 0 and buffer.is_ready(batch_size):
                 last_loss = _dqn_train_step(
                     policy_net, target_net, optimizer,
                     buffer, batch_size, gamma, device
@@ -139,7 +139,8 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim,
 
         episode += 1
         tracker.log_episode(step, episode_reward, env.curr_wave, env)
-        mlflow_log_episode(episode, episode_reward, epsilon, env.curr_wave, last_loss)
+        if episode % log_every == 0:
+            mlflow_log_episode(episode, episode_reward, epsilon, env.curr_wave, last_loss)
 
         # stop early once all levels cleared — prevents level-reset from corrupting metrics
         if ENV_CONFIG["levels"] in tracker.level_clear_steps:

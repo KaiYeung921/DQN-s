@@ -16,7 +16,8 @@ TRAIN_CONFIG = {
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
     "epsilon_decay":   0.99994,  # hits 0.05 at ~50k steps (67% of budget)
-    "log_every":       100,
+    "train_freq":      4,        # gradient update every N steps (matches DQN paper)
+    "log_every":       10,       # log MLflow every N episodes
     "rolling_window":  10,
 }
 

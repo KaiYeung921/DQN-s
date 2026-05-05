@@ -49,11 +49,11 @@ class ReplayBuffer:
         upper   = self.capacity if self.full else self.pos
         indices = np.random.randint(0, upper, size=batch_size)
         return (
-            torch.FloatTensor(self._states[indices]),
-            torch.LongTensor(self._actions[indices]),
-            torch.FloatTensor(self._rewards[indices]),
-            torch.FloatTensor(self._next_states[indices]),
-            torch.FloatTensor(self._dones[indices]),
+            torch.from_numpy(self._states[indices]),
+            torch.from_numpy(self._actions[indices]),
+            torch.from_numpy(self._rewards[indices]),
+            torch.from_numpy(self._next_states[indices]),
+            torch.from_numpy(self._dones[indices]),
         )
 
     def __len__(self):
