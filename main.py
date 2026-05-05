@@ -1,4 +1,8 @@
 # main.py
+import os
+# one OpenMP thread per worker — prevents thread exhaustion with n_jobs > 1
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
 import argparse
 from training.optuna_search import run_study
 

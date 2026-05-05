@@ -117,12 +117,12 @@ def run_study(agent_type, study_name=None, n_jobs=None):
     # no database server required. SQLite serializes writes and raises
     # locking errors when multiple processes hit it simultaneously.
     journal_path = f"{OPTUNA_DIR}/{study_name}.log"
-    # JournalFileBackend (Optuna <4) was renamed to JournalFileStorage (Optuna 4+)
+    # Optuna 4.x moved JournalFileBackend to optuna.storages.journal submodule
     try:
-        _backend = optuna.storages.JournalFileStorage(journal_path)
-    except AttributeError:
-        _backend = optuna.storages.JournalFileBackend(journal_path)
-    storage = optuna.storages.JournalStorage(_backend)
+        from optuna.storages.journal import JournalFileBackend as _FileBackend
+    except ImportError:
+        _FileBackend = optuna.storages.JournalFileBackend
+    storage = optuna.storages.JournalStorage(_FileBackend(journal_path))
 
     # pre-create the MLflow experiment in this process before workers start
     # so parallel workers never race to create it simultaneously
