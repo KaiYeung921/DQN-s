@@ -11,11 +11,11 @@ ENV_CONFIG = {
 }
 
 TRAIN_CONFIG = {
-    "total_timesteps": 10000,
+    "total_timesteps": 75_000,
     "eval_episodes":   20,
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
-    "epsilon_decay":   0.99,
+    "epsilon_decay":   0.99994,  # hits 0.05 at ~50k steps (67% of budget)
     "log_every":       100,
     "rolling_window":  10,
 }
@@ -25,7 +25,7 @@ TRAIN_CONFIG = {
 DQN_SEARCH_SPACE = {
     "lr":           ("float", 1e-4, 1e-2, True),
     "gamma":        ("float", 0.90, 0.999, False),
-    "buffer_size":  ("int",   5_000, 50_000, False),
+    "buffer_size":  ("int",   5_000, 25_000, False),
     "batch_size":   ("int",   32, 256, False),
     "target_update":("int",   10, 500, False),
     "hidden_dim":   ("int",   64, 512, False),
@@ -34,7 +34,7 @@ DQN_SEARCH_SPACE = {
 DRQN_SEARCH_SPACE = {
     "lr":           ("float", 1e-4, 1e-2, True),
     "gamma":        ("float", 0.90, 0.999, False),
-    "buffer_size":  ("int",   5_000, 50_000, False),
+    "buffer_size":  ("int",   5_000, 25_000, False),
     "batch_size":   ("int",   32, 256, False),
     "target_update":("int",   10, 500, False),
     "hidden_dim":   ("int",   64, 512, False),
@@ -50,4 +50,4 @@ DRQN_EXPERIMENT_NAME = "hexxed_drqn"
 OPTUNA_DIR      = "optuna_studies"
 DQN_STUDY_NAME  = "dqn_study"
 DRQN_STUDY_NAME = "drqn_study"
-N_TRIALS        = 50
+N_TRIALS        = 25

@@ -47,7 +47,7 @@ class ProgressTracker:
 
         # check if a new level was cleared
         if level not in self.level_clear_steps:
-            if env.wave_reward >= env.max_reward - len(env.pattern_list) * 6:
+            if env.wave_reward >= env.max_reward - len(env.pattern_list) * 15:
                 self.level_clear_steps[level]   = step
                 self.episodes_to_level[level]   = self._episode_count
                 if level == 1 and self.first_level_clear is None:
@@ -169,6 +169,7 @@ def _dqn_train_step(policy_net, target_net, optimizer,
     loss = F.mse_loss(current_q, target_q)
     optimizer.zero_grad()
     loss.backward()
+    torch.nn.utils.clip_grad_norm_(policy_net.parameters(), max_norm=10)
     optimizer.step()
     return loss.item()
 
