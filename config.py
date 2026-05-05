@@ -12,7 +12,7 @@ ENV_CONFIG = {
 
 TRAIN_CONFIG = {
     "total_timesteps":  75_000,
-    "search_timesteps": 15_000,
+    "search_timesteps": 30_000,
     "eval_episodes":   20,
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
@@ -52,3 +52,4 @@ OPTUNA_DIR      = "optuna_studies"
 DQN_STUDY_NAME  = "dqn_study"
 DRQN_STUDY_NAME = "drqn_study"
 N_TRIALS        = 50
+N_JOBS          = 4   # parallel trials — set to CPU count on Lambda server

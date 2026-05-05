@@ -70,10 +70,9 @@ class ProgressTracker:
             "mean_reward":               np.mean(self.episode_rewards) if self.episode_rewards else 0,
         }
 
-def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
+def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim,
+              total_steps_override=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    #setup
 
     env = hexxed()
     env.ready(**ENV_CONFIG)
@@ -95,7 +94,7 @@ def train_dqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim):
     epsilon      = TRAIN_CONFIG["epsilon_start"]
     epsilon_end  = TRAIN_CONFIG["epsilon_end"]
     epsilon_decay= TRAIN_CONFIG["epsilon_decay"]
-    total_steps  = TRAIN_CONFIG["total_timesteps"]
+    total_steps  = total_steps_override if total_steps_override is not None else TRAIN_CONFIG["total_timesteps"]
 
     step        = 0
     episode     = 0
