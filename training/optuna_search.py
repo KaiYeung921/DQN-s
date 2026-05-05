@@ -7,7 +7,8 @@ from config import (
     DRQN_STUDY_NAME,
     DQN_SEARCH_SPACE,
     DRQN_SEARCH_SPACE,
-    N_TRIALS
+    N_TRIALS,
+    TRAIN_CONFIG
 )
 from tracking.mlflow_logger import (
     setup_mlflow,
@@ -85,7 +86,7 @@ def make_drqn_objective():
         start_run(params)
 
         try:
-            final_reward, tracker = train_drqn(**params)
+            final_reward, tracker = train_drqn(**params, total_steps_override=TRAIN_CONFIG["search_timesteps"])
             log_trial_result(final_reward)
             log_summary(tracker)
             return final_reward

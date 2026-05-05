@@ -11,7 +11,8 @@ ENV_CONFIG = {
 }
 
 TRAIN_CONFIG = {
-    "total_timesteps": 75_000,
+    "total_timesteps":  75_000,
+    "search_timesteps": 15_000,
     "eval_episodes":   20,
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
@@ -50,4 +51,4 @@ DRQN_EXPERIMENT_NAME = "hexxed_drqn"
 OPTUNA_DIR      = "optuna_studies"
 DQN_STUDY_NAME  = "dqn_study"
 DRQN_STUDY_NAME = "drqn_study"
-N_TRIALS        = 25
+N_TRIALS        = 50

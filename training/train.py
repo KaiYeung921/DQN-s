@@ -173,7 +173,7 @@ def _dqn_train_step(policy_net, target_net, optimizer,
     optimizer.step()
     return loss.item()
 
-def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, seq_len):
+def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, seq_len, total_steps_override=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # setup
@@ -198,7 +198,7 @@ def train_drqn(lr, gamma, batch_size, buffer_size, target_update, hidden_dim, se
     epsilon       = TRAIN_CONFIG["epsilon_start"]
     epsilon_end   = TRAIN_CONFIG["epsilon_end"]
     epsilon_decay = TRAIN_CONFIG["epsilon_decay"]
-    total_steps   = TRAIN_CONFIG["total_timesteps"]
+    total_steps   = total_steps_override if total_steps_override is not None else TRAIN_CONFIG["total_timesteps"]
 
     step    = 0
     episode = 0
