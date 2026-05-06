@@ -45,9 +45,12 @@ class ProgressTracker:
         window = self.episode_rewards[-self.rolling_window:]
         self.rolling_reward.append(np.mean(window))
 
-        # check if a new level was cleared
+        # check if a new level was cleared — only after ALL subwaves of the level
+        # are done (subwave_num == len(pattern_list)). Before that, max_reward only
+        # reflects partial patterns so the tolerance makes the condition trivially true.
         if level not in self.level_clear_steps:
-            if env.wave_reward >= env.max_reward - len(env.pattern_list) * 15:
+            if env.subwave_num == len(env.pattern_list) and \
+               env.wave_reward >= env.max_reward - len(env.pattern_list) * 15:
                 self.level_clear_steps[level]   = step
                 self.episodes_to_level[level]   = self._episode_count
                 if level == 1 and self.first_level_clear is None:
