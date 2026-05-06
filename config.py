@@ -11,11 +11,11 @@ ENV_CONFIG = {
 }
 
 TRAIN_CONFIG = {
-    "total_timesteps":  75_000,
+    "total_timesteps":  30_000,
     "eval_episodes":   20,
     "epsilon_start":   1.0,
     "epsilon_end":     0.05,
-    "epsilon_decay":   0.99994,  # hits 0.05 at ~50k steps (67% of budget)
+    "epsilon_decay":   0.99985,  # hits 0.05 at ~20k steps (67% of 30k budget)
     "train_freq":      4,        # gradient update every N steps (matches DQN paper)
     "log_every":       10,       # log MLflow every N episodes
     "rolling_window":  10,
