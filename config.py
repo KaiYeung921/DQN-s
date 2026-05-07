@@ -51,5 +51,5 @@ DRQN_EXPERIMENT_NAME = "hexxed_drqn"
 OPTUNA_DIR      = "optuna_studies"
 DQN_STUDY_NAME  = "dqn_study"
 DRQN_STUDY_NAME = "drqn_study"
-N_TRIALS        = 50
-N_JOBS          = 4   # parallel trials — set to CPU count on Lambda server
+N_TRIALS        = 100
+N_JOBS          = 20  # ~5 batches of 20 — gives TPE enough rounds to learn
